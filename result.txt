@@ -1,4 +1,0 @@
-Eval Loss: 0.38468989, Accu: 0.97840909
-Precision: 0.98076923
-Recall: 0.98000000
-F1-score: 0.97987350
