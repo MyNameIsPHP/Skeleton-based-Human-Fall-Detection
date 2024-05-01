@@ -9,13 +9,15 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-csv_pose_file = 'pose_urfd.csv'
-save_dir = 'ActionRecognition/URFD'
+csv_pose_file = 'pose_urfd_3classes.csv'
+save_dir = 'ActionRecognition/URFD_3classes'
 
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 
-class_names = ['Not fall', 'Fall']
+# class_names = ['Not fall', 'Fall']
+class_names = ['Not fall', 'Falling', 'Fall']
+
 main_parts = ['LShoulder_x', 'LShoulder_y', 'RShoulder_x', 'RShoulder_y', 'LHip_x', 'LHip_y',
               'RHip_x', 'RHip_y']
 main_idx_parts = [1, 2, 7, 8, -1]  # 1.5
@@ -124,6 +126,7 @@ for vid in vid_list:
         for i in range(xys.shape[0] - n_frames):
             feature_set = np.append(feature_set, xys[i:i+n_frames][None, ...], axis=0)
             labels_set = np.append(labels_set, lb[i:i+n_frames].mean(0)[None, ...], axis=0)
+
 
 # Split into train, val, and test sets
 X_train, X_val_test, y_train, y_val_test = train_test_split(feature_set, labels_set, test_size=0.2, random_state=42)

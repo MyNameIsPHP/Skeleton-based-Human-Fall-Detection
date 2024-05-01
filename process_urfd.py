@@ -17,22 +17,31 @@ from PoseEstimateLoader import SPPE_FastPose
 
 image_directory = "UR_FallDetection/cam0"
 csv_file = "UR_FallDetection/urfall-cam0-falls.csv"
-save_path = 'pose_urfd.csv'
+save_path = 'pose_urfd_3classes.csv'
 input_size = 384
 inp_h = 320
 inp_w = 256
-
+num_class = 3
 
 detect_model = TinyYOLOv3_onecls(device='cuda')
 pose_estimator = SPPE_FastPose('resnet50', inp_h, inp_w)
 
 # with score.
-columns = ['video', 'frame', 'Nose_x', 'Nose_y', 'Nose_s', 'LShoulder_x', 'LShoulder_y', 'LShoulder_s',
-           'RShoulder_x', 'RShoulder_y', 'RShoulder_s', 'LElbow_x', 'LElbow_y', 'LElbow_s', 'RElbow_x',
-           'RElbow_y', 'RElbow_s', 'LWrist_x', 'LWrist_y', 'LWrist_s', 'RWrist_x', 'RWrist_y', 'RWrist_s',
-           'LHip_x', 'LHip_y', 'LHip_s', 'RHip_x', 'RHip_y', 'RHip_s', 'LKnee_x', 'LKnee_y', 'LKnee_s',
-           'RKnee_x', 'RKnee_y', 'RKnee_s', 'LAnkle_x', 'LAnkle_y', 'LAnkle_s', 'RAnkle_x', 'RAnkle_y',
-           'RAnkle_s', 'label']
+columns = ['video', 'frame', 
+           'Nose_x', 'Nose_y', 'Nose_s', 
+           'LShoulder_x', 'LShoulder_y', 'LShoulder_s',
+           'RShoulder_x', 'RShoulder_y', 'RShoulder_s', 
+           'LElbow_x', 'LElbow_y', 'LElbow_s', 
+           'RElbow_x','RElbow_y', 'RElbow_s', 
+           'LWrist_x', 'LWrist_y', 'LWrist_s', 
+           'RWrist_x', 'RWrist_y', 'RWrist_s',
+           'LHip_x', 'LHip_y', 'LHip_s', 
+           'RHip_x', 'RHip_y', 'RHip_s', 
+           'LKnee_x', 'LKnee_y', 'LKnee_s',
+           'RKnee_x', 'RKnee_y', 'RKnee_s', 
+           'LAnkle_x', 'LAnkle_y', 'LAnkle_s', 
+           'RAnkle_x', 'RAnkle_y', 'RAnkle_s', 
+           'label']
 
 
 # Read CSV file into a pandas DataFrame
@@ -54,12 +63,16 @@ for index, row in df.iterrows():
     filename = row[1]
     label = row[2]
     
-    # Skip rows with label 0
-    if label == 0:
-        continue
-    if label == -1:
-        label = 0 # not lying
-
+    if (num_class == 2):
+        # Skip rows with label 0
+        if label == 0:
+            continue
+        if label == -1:
+            label = 0 # not lying
+    elif (num_class == 3):
+        # Skip rows with label 0
+        label += 1 # 0: not fall , 1: falling, 2: fall
+    
     # Construct the full path to the image
     image_path = f"{image_directory}/{directory}-cam0-rgb/{directory}-cam0-rgb-{int(filename):03d}.png"
     print(image_path)
@@ -123,7 +136,10 @@ for index, row in df.iterrows():
         # VISUALIZE.
         frame = vis_frame_fast(frame, result)
         frame = cv2.rectangle(frame, (bb[0], bb[1]), (bb[2], bb[3]), (0, 255, 0), 2)
-        label_text = "Lying" if label == 1 else "Not Lying"
+        if num_class == 2:
+            label_text = "Fall" if label == 1 else "Not Fall"
+        elif num_class == 3:
+            label_text = "Fall" if label == 2 else "Falling" if label == 1 else "Not Fall"
         frame = cv2.putText(frame, 'Frame: {}, Pose: {}, Score: {:.4f}'.format(filename, label_text, scr),
                             (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
         ##########

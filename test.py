@@ -17,7 +17,7 @@ import pandas as pd
 
 # source = '0'
 csv_file = "UR_FallDetection/urfall-cam0-falls.csv"
-FALL_DETECT_WEIGHT_FILE = "Actionsrecognition/saved/TSSTG_URFD/tsstg-model.pth"
+FALL_DETECT_WEIGHT_FILE = "ActionRecognition/Result/tsstg-model.pth"
 df = pd.read_csv(csv_file, header=None)
 image_directory = "UR_FallDetection/cam0"
 
