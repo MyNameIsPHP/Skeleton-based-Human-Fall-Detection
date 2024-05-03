@@ -1,6 +1,6 @@
 import cv2
 
-directory = "Le2i_kaggle/Coffee_room_01"
+directory = "Data/Le2i/Coffee_room_01"
 target_filename = "video (2)"
 
 annotation_file = f"{directory}/Annotation_files/{target_filename}.txt"

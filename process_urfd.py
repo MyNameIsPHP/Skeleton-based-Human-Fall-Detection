@@ -15,9 +15,9 @@ from fn import vis_frame_fast
 from DetectorLoader import TinyYOLOv3_onecls
 from PoseEstimateLoader import SPPE_FastPose
 
-image_directory = "UR_FallDetection/cam0"
-csv_file = "UR_FallDetection/urfall-cam0-falls.csv"
-save_path = 'pose_urfd_3classes.csv'
+image_directory = "Data/UR_FallDetection/cam0"
+csv_file = "Data/UR_FallDetection/urfall-cam0-falls.csv"
+save_path = 'DataFiles/pose_urfd_3classes.csv'
 input_size = 384
 inp_h = 320
 inp_w = 256

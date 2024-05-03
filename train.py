@@ -13,8 +13,14 @@ from sklearn.model_selection import train_test_split
 
 
 from Visualizer import plot_graphs, plot_confusion_matrix
-from sklearn.metrics import precision_score, recall_score, f1_score
-from Network.stgcn_2stream import *
+from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_score
+from Network.stgcn import *
+from Network.linear_dense_stgcn import *
+from Network.exponential_dense_stgcn import *
+from Network.oneshot_stgcn import *
+
+# from Network.dense_2 import *
+
 import csv
 from torchinfo import summary
 from fvcore.nn import FlopCountAnalysis, parameter_count
@@ -23,7 +29,7 @@ from thop import profile
 
 
 device = 'cuda'
-epochs = 30
+epochs = 80
 batch_size = 32
 
 # DATA FILES.
@@ -37,7 +43,7 @@ batch_size = 32
 #   graph_node: Number of node in skeleton, Default: 14
 #   channels: Inputs data (x, y and scores), Default: 3
 #   num_class: Number of pose class to train, Default: 7
-model_name = 'STGCN_2S'
+model_name = 'OneShot_STGCN_2S'
 dataset_name = "URFD_3classes"
 save_folder = f'Result/{dataset_name}/{model_name}_{time.strftime("%Y%m%d%H%M%S")}'
 train_data_file = f'DataFiles/{dataset_name}/train.pkl'
@@ -122,6 +128,20 @@ if __name__ == '__main__':
         model =OneStream_STGCN(graph_args=graph_args, num_class=num_class).to(device)
     elif (model_name == "STGCN_2S"):
         model = TwoStream_STGCN(graph_args=graph_args, num_class=num_class).to(device)
+    elif (model_name == "Lin_DenseSTGCN_1S"):
+        model = Lin_DenseSTGCN_1S(graph_args=graph_args, num_class=num_class, n_layers=6).to(device)
+    elif (model_name == "Lin_DenseSTGCN_2S"):
+        model = Lin_DenseSTGCN_2S(graph_args=graph_args, num_class=num_class, n_layers=6).to(device)
+    elif (model_name == "Exp_DenseSTGCN_1S"):
+        model = Exp_DenseSTGCN_1S(graph_args=graph_args, num_class=num_class, n_layers=4).to(device)
+    elif (model_name == "Exp_DenseSTGCN_2S"):
+        model = Exp_DenseSTGCN_2S(graph_args=graph_args, num_class=num_class, n_layers=4).to(device)
+    elif (model_name == "OneShot_STGCN_1S"):
+        model = OneShot_STGCN_1S(num_class=num_class, graph_args=graph_args, n_layers=6).to(device)
+    elif (model_name == "OneShot_STGCN_2S"):
+        model = OneShot_STGCN_2S(num_class=num_class, graph_args=graph_args, n_layers=6).to(device)
+    else:
+        model = Exp_DenseSTGCN_2S(graph_args=graph_args, num_class=num_class, n_layers=4).to(device)
     
     # Use torchinfo to summarize the model
     input_shape = tuple(train_loader.dataset[0][0].shape)
@@ -154,6 +174,8 @@ if __name__ == '__main__':
         # TRAINING.
         loss_list = {'train': [], 'valid': []}
         accu_list = {'train': [], 'valid': []}
+        # Training loop
+        best_valid_loss = float('inf')
         for e in range(epochs):
             print('Epoch {}/{}'.format(e, epochs - 1))
             for phase in ['train', 'valid']:
@@ -199,7 +221,13 @@ if __name__ == '__main__':
                                                 loss_list['valid'][-1], accu_list['valid'][-1]))
 
             # SAVE.
-            torch.save(model.state_dict(), os.path.join(save_folder, f'{model_name}.pth'))
+            if phase == 'valid' and loss_list['valid'][-1] < best_valid_loss:
+                print('Validation loss decreased ({:.6f} --> {:.6f}).  Saving model ...'.format(
+                    best_valid_loss, loss_list['valid'][-1]))
+                torch.save(model.state_dict(), os.path.join(save_folder, f'{model_name}_best.pth'))
+                best_valid_loss = loss_list['valid'][-1]
+
+            torch.save(model.state_dict(), os.path.join(save_folder, f'{model_name}_last.pth'))
 
             plot_graphs(list(loss_list.values()), list(loss_list.keys()),
                         'Last Train: {:.2f}, Valid: {:.2f}'.format(
@@ -223,7 +251,7 @@ if __name__ == '__main__':
         del train_loader, valid_loader
 
     
-    model.load_state_dict(torch.load(os.path.join(save_folder, f'{model_name}.pth')))
+    model.load_state_dict(torch.load(os.path.join(save_folder, f'{model_name}_best.pth')))
 
     # EVALUATION.
     model = set_training(model, False)
@@ -275,11 +303,13 @@ if __name__ == '__main__':
 
     print('Eval Loss: {:.7f}, Accu: {:.7f}'.format(run_loss, run_accu))
     # Calculate precision, recall, and F1-score
+    accuracy =  accuracy_score(y_trues, y_preds)
     precision = precision_score(y_trues, y_preds, average='weighted')
     recall = recall_score(y_trues, y_preds, average='weighted')
     f1 = f1_score(y_trues, y_preds, average='weighted')
 
     # Print the results
+    print('Accuracy:', accuracy)
     print('Precision:', precision)
     print('Recall:', recall)
     print('F1-score:', f1)
@@ -288,6 +318,7 @@ if __name__ == '__main__':
     # Save results to "result.txt" file
     with open(os.path.join(save_folder, 'result.txt'), "w") as f:
         f.write("Eval Loss: {:.7f}, Accu: {:.7f}\n".format(run_loss, run_accu))
+        f.write("Accuracy: {:.7f}\n".format(accuracy))
         f.write("Precision: {:.7f}\n".format(precision))
         f.write("Recall: {:.7f}\n".format(recall))
         f.write("F1-score: {:.7f}\n".format(f1))

@@ -1,0 +1,6 @@
+Eval Loss: 0.3805440, Accu: 0.9875000
+Accuracy: 0.9866667
+Precision: 0.9872000
+Recall: 0.9866667
+F1-score: 0.9867126
+Average Inference Time: 0.0006451 seconds
