@@ -43,7 +43,7 @@ batch_size = 32
 #   graph_node: Number of node in skeleton, Default: 14
 #   channels: Inputs data (x, y and scores), Default: 3
 #   num_class: Number of pose class to train, Default: 7
-model_name = 'OneShot_STGCN_2S'
+model_name = 'Test'
 dataset_name = "URFD_3classes"
 save_folder = f'Result/{dataset_name}/{model_name}_{time.strftime("%Y%m%d%H%M%S")}'
 train_data_file = f'DataFiles/{dataset_name}/train.pkl'
@@ -141,7 +141,7 @@ if __name__ == '__main__':
     elif (model_name == "OneShot_STGCN_2S"):
         model = OneShot_STGCN_2S(num_class=num_class, graph_args=graph_args, n_layers=6).to(device)
     else:
-        model = Exp_DenseSTGCN_2S(graph_args=graph_args, num_class=num_class, n_layers=4).to(device)
+        model = OneShot_STGCN_2S(graph_args=graph_args, num_class=num_class, n_layers=4).to(device)
     
     # Use torchinfo to summarize the model
     input_shape = tuple(train_loader.dataset[0][0].shape)
