@@ -6,6 +6,7 @@ __pycache__/
 # Data and Weights directories
 Data/
 Weights/
+DataFiles/
 
 # C extensions
 *.so

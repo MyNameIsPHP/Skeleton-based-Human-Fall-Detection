@@ -186,7 +186,7 @@ class OneShot_STGCN_2S(nn.Module):
                                                      edge_importance_weighting = edge_importance_weighting,
                                                      **kwargs)
 
-        self.fcn = nn.Linear(384, num_class)
+        self.fcn = nn.Linear(256, num_class)
 
     def forward(self, joints):
         motions = joints[:, :2, 1:, :] - joints[:, :2, :-1, :]

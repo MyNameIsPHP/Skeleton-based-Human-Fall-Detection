@@ -147,13 +147,13 @@ print("Test set distribution:", test_dist)
 
 # Save the datasets
 
-with open(os.path.join(save_dir, 'urfd_train.pkl'), 'wb') as f:
+with open(os.path.join(save_dir, 'train.pkl'), 'wb') as f:
     pickle.dump((X_train, y_train), f)
 
 
-with open(os.path.join(save_dir, 'urfd_val.pkl'), 'wb') as f:
+with open(os.path.join(save_dir, 'val.pkl'), 'wb') as f:
     pickle.dump((X_val, y_val), f)
 
 
-with open(os.path.join(save_dir, 'urfd_test.pkl'), 'wb') as f:
+with open(os.path.join(save_dir, 'test.pkl'), 'wb') as f:
     pickle.dump((X_test, y_test), f)

@@ -44,14 +44,14 @@ batch_size = 32
 #   channels: Inputs data (x, y and scores), Default: 3
 #   num_class: Number of pose class to train, Default: 7
 model_name = 'Test'
-dataset_name = "URFD_3classes"
+dataset_name = "Le2i_2classes_1"
 save_folder = f'Result/{dataset_name}/{model_name}_{time.strftime("%Y%m%d%H%M%S")}'
 train_data_file = f'DataFiles/{dataset_name}/train.pkl'
 val_data_file = f'DataFiles/{dataset_name}/val.pkl'
 test_data_file = f'DataFiles/{dataset_name}/test.pkl'
 eval_only = False
-# class_names = ['Not fall', 'Fall']
-class_names = ['Not fall', 'Falling', 'Fall']
+class_names = ['Not fall', 'Fall']
+# class_names = ['Not fall', 'Falling', 'Fall']
 
 num_class = len(class_names)
 
