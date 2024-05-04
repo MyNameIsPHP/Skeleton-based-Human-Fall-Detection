@@ -188,10 +188,7 @@ for sub_directory in sub_directories:
             # print frame count and label
             print(f"Frame: {cur_row}, Label: {label_3classes}")
 
-            result_df_3classes.to_csv(f'{save_name}_3classes.csv', mode='w', index=False)
-            result_df_2classes_1.to_csv(f'{save_name}_2classes.csv', mode='w', index=False)
-            result_df_2classes_2.to_csv(f'{save_name}_2classes_2.csv', mode='w', index=False)
-            result_df_2classes_3.to_csv(f'{save_name}_2classes_3.csv', mode='w', index=False)
+
 
 
             frame = frame[:, :, ::-1]
@@ -206,8 +203,10 @@ for sub_directory in sub_directories:
 cap.release()
 # Count the number of each class
 
-
-
+result_df_3classes.to_csv(f'{save_name}_3classes.csv', mode='w', index=False)
+result_df_2classes_1.to_csv(f'{save_name}_2classes.csv', mode='w', index=False)
+result_df_2classes_2.to_csv(f'{save_name}_2classes_2.csv', mode='w', index=False)
+result_df_2classes_3.to_csv(f'{save_name}_2classes_3.csv', mode='w', index=False)
 
 class_counts = result_df_3classes['label'].value_counts()
 print("3 class count: ", class_counts)
