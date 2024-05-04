@@ -8,6 +8,7 @@ from threading import Thread
 
 from Detection.Models import Darknet
 from Detection.Utils import non_max_suppression, ResizePadding
+import cv2
 
 
 class TinyYOLOv3_onecls(object):
@@ -24,8 +25,8 @@ class TinyYOLOv3_onecls(object):
                  input_size=416,
                  config_file='Weights/yolo-tiny-onecls/yolov3-tiny-onecls.cfg',
                  weight_file='Weights/yolo-tiny-onecls/best-model.pth',
-                 nms=0.2,
-                 conf_thres=0.45,
+                 nms=0.5,
+                 conf_thres=0.1,
                  device='cuda'):
         self.input_size = input_size
         self.model = Darknet(config_file).to(device)
@@ -68,11 +69,78 @@ class TinyYOLOv3_onecls(object):
 
             detected[:, 0:2] = np.maximum(0, detected[:, 0:2] - expand_bb)
             detected[:, 2:4] = np.minimum(image_size[::-1], detected[:, 2:4] + expand_bb)
-
         return detected
 
+class YOLOv8_human(object):
+    """Load trained Tiny-YOLOv3 one class (person) detection model.
+    Args:
+        input_size: (int) Size of input image must be divisible by 32. Default: 416,
+        config_file: (str) Path to Yolo model structure config file.,
+        weight_file: (str) Path to trained weights file.,
+        nms: (float) Non-Maximum Suppression overlap threshold.,
+        conf_thres: (float) Minimum Confidence threshold of predicted bboxs to cut off.,
+        device: (str) Device to load the model on 'cpu' or 'cuda'.
+    """
+    def __init__(self,
+                 input_size=416,
+                 weight_file='Weights/YOLOv8_Human/v8_n.pt',
+                 nms=0.5,
+                 conf_thres=0.5,
+                 device='cuda'):
+        # from Detection import nn e
+        self.device = device
+        self.input_size = input_size
+        self.model = torch.load(weight_file, map_location=self.device)['model'].float()
+        self.model.half()
+        self.model.eval()
+
+        self.nms = nms
+        self.conf_thres = conf_thres
+
+        self.resize_fn = ResizePadding(input_size, input_size)
+        self.transf_fn = transforms.ToTensor()
+
+    def detect(self, image, need_resize=True, expand_bb=5):
+
+        image_size = (self.input_size, self.input_size)
+        if need_resize:
+            image_size = image.shape[:2]
+            image = self.resize_fn(image)
+
+        x = image.transpose((2, 0, 1))[::-1]
+        x = np.ascontiguousarray(x)
+        x = torch.from_numpy(x)
+        x = x.unsqueeze(dim=0)
+        x = x.half()
+        x = x / 255
+        scf = torch.min(self.input_size / torch.FloatTensor([image_size]), 1)[0]
+    
+        detected = self.model(x.to(self.device))
+        detected = non_max_suppression(detected, self.conf_thres, self.nms)[0]
+
+        if detected is not None:
+            # move all to cuda
+            if (self.device == 'cuda'):
+                detected = detected.cpu().detach().numpy()
+                scf = scf.cpu().detach().numpy()
+            detected[:, [0, 2]] -= (self.input_size - scf * image_size[1]) / 2
+            detected[:, [1, 3]] -= (self.input_size - scf * image_size[0]) / 2
+            detected[:, 0:4] /= scf
+
+            detected[:, 0:2] = np.maximum(0, detected[:, 0:2] - expand_bb)
+            detected[:, 2:4] = np.minimum(image_size[::-1], detected[:, 2:4] + expand_bb)
+        print(detected.shape)
+        return torch.from_numpy(detected)
+
+
+
+
+
+
+   
 
 class ThreadDetection(object):
+
     def __init__(self,
                  dataloader,
                  model,

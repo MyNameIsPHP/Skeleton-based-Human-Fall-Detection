@@ -16,7 +16,7 @@ from fn import vis_frame_fast
 
 from DetectorLoader import TinyYOLOv3_onecls
 from PoseEstimateLoader import SPPE_FastPose
-
+torch.cuda.synchronize()
 input_size = 384
 inp_h = 320
 inp_w = 256
@@ -24,7 +24,12 @@ inp_w = 256
 
 detect_model = TinyYOLOv3_onecls(device='cuda')
 pose_estimator = SPPE_FastPose('resnet50', inp_h, inp_w)
-save_name = 'pose_le2i'
+save_name = 'DataFiles/Le2i_annotations/pose_le2i'
+
+#make dir if not exist
+save_name_dir = os.path.dirname(save_name)
+if not os.path.exists(save_name_dir):
+    os.makedirs(save_name_dir)
 
 # with score.
 columns = ['video', 'frame', 
@@ -150,17 +155,17 @@ for sub_directory in sub_directories:
 
                     #idx = result[0]['kp_score'] <= 0.05
                     #pt_norm[idx.squeeze()] = np.nan
-                    row_3classes = [sub_directory, target_filename, *pt_norm.flatten().tolist(), label_3classes]
-                    row_2classes_1 = [sub_directory, target_filename, *pt_norm.flatten().tolist(), label_2classes_1]
-                    row_2classes_2 = [sub_directory, target_filename, *pt_norm.flatten().tolist(), label_2classes_2]
-                    row_2classes_3 = [sub_directory, target_filename, *pt_norm.flatten().tolist(), label_2classes_3]
+                    row_3classes = [f'{sub_directory}/{target_filename}', frame_count, *pt_norm.flatten().tolist(), label_3classes]
+                    row_2classes_1 = [f'{sub_directory}/{target_filename}', frame_count, *pt_norm.flatten().tolist(), label_2classes_1]
+                    row_2classes_2 = [f'{sub_directory}/{target_filename}', frame_count, *pt_norm.flatten().tolist(), label_2classes_2]
+                    row_2classes_3 = [f'{sub_directory}/{target_filename}', frame_count, *pt_norm.flatten().tolist(), label_2classes_3]
 
                     scr = result[0]['kp_score'].mean()
                 else:
-                    row_3classes = [sub_directory, target_filename, *[np.nan] * (13 * 3), label_3classes]
-                    row_2classes_1 = [sub_directory, target_filename, *[np.nan] * (13 * 3), label_2classes_1]
-                    row_2classes_2 = [sub_directory, target_filename, *[np.nan] * (13 * 3), label_2classes_2]
-                    row_2classes_3 = [sub_directory, target_filename, *[np.nan] * (13 * 3), label_2classes_3]
+                    row_3classes = [f'{sub_directory}/{target_filename}', frame_count, *[np.nan] * (13 * 3), label_3classes]
+                    row_2classes_1 = [f'{sub_directory}/{target_filename}', frame_count, *[np.nan] * (13 * 3), label_2classes_1]
+                    row_2classes_2 = [f'{sub_directory}/{target_filename}', frame_count, *[np.nan] * (13 * 3), label_2classes_2]
+                    row_2classes_3 = [f'{sub_directory}/{target_filename}', frame_count, *[np.nan] * (13 * 3), label_2classes_3]
 
                     scr = 0.0
 
@@ -188,6 +193,7 @@ for sub_directory in sub_directories:
             result_df_2classes_2.to_csv(f'{save_name}_2classes_2.csv', mode='w', index=False)
             result_df_2classes_3.to_csv(f'{save_name}_2classes_3.csv', mode='w', index=False)
 
+
             frame = frame[:, :, ::-1]
             
             cv2.imshow('Video', frame)
@@ -195,9 +201,14 @@ for sub_directory in sub_directories:
                 break
             
             frame_count += 1
+    torch.cuda.empty_cache()
 
 cap.release()
 # Count the number of each class
+
+
+
+
 class_counts = result_df_3classes['label'].value_counts()
 print("3 class count: ", class_counts)
 
