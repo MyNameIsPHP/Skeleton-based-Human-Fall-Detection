@@ -10,14 +10,15 @@ Download pretrained models
 
 ## Usage
 
-Extract the pose information from URFD by running:
+Extract the pose information from URFD or Le2i by running:
 ```
 python3 process_urfd.py
+python3 propess_le2i.py
 ```
 
 Create the `pkl` data file by running:
 ```
-python3 process_urfd_2.py
+python3 process_annotation.py
 ```
 
 Train the action recognition model:
