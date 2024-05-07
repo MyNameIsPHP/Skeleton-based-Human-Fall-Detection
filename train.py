@@ -29,7 +29,7 @@ from thop import profile
 
 
 device = 'cuda'
-epochs = 80
+epochs = 2
 batch_size = 32
 
 # DATA FILES.
@@ -43,8 +43,8 @@ batch_size = 32
 #   graph_node: Number of node in skeleton, Default: 14
 #   channels: Inputs data (x, y and scores), Default: 3
 #   num_class: Number of pose class to train, Default: 7
-model_name = 'Test'
-dataset_name = "Le2i_2classes_1"
+model_name = 'STGCN_2S'
+dataset_name = "URFD_2classes"
 save_folder = f'Result/{dataset_name}/{model_name}_{time.strftime("%Y%m%d%H%M%S")}'
 train_data_file = f'DataFiles/{dataset_name}/train.pkl'
 val_data_file = f'DataFiles/{dataset_name}/val.pkl'
@@ -176,6 +176,7 @@ if __name__ == '__main__':
         accu_list = {'train': [], 'valid': []}
         # Training loop
         best_valid_loss = float('inf')
+        start_training_time = time.time()
         for e in range(epochs):
             print('Epoch {}/{}'.format(e, epochs - 1))
             for phase in ['train', 'valid']:
@@ -216,6 +217,7 @@ if __name__ == '__main__':
                 accu_list[phase].append(run_accu / len(iterator))
                 #break
 
+
             print('Summary epoch:\n - Train loss: {:.4f}, accu: {:.4f}\n - Valid loss:'
                 ' {:.4f}, accu: {:.4f}'.format(loss_list['train'][-1], accu_list['train'][-1],
                                                 loss_list['valid'][-1], accu_list['valid'][-1]))
@@ -240,6 +242,7 @@ if __name__ == '__main__':
                         ), 'Accu', xlim=[0, epochs],
                         save=os.path.join(save_folder, 'accu_graph.png'))
             
+        end_training_time = time.time()
         # Save loss_list and accu_list to a CSV file
         with open(os.path.join(save_folder, 'log.csv'), 'w', newline='') as csvfile:
             writer = csv.writer(csvfile)
@@ -253,12 +256,12 @@ if __name__ == '__main__':
     
     model.load_state_dict(torch.load(os.path.join(save_folder, f'{model_name}_best.pth')))
 
-    # EVALUATION.
+    # EVALUATION on GPU.
     model = set_training(model, False)
 
     eval_loader, _ = load_dataset([test_data_file], 32)
 
-    print('Evaluation.')
+    print('Evaluation on GPU.')
     run_loss = 0.0
     run_accu = 0.0
     y_preds = []
@@ -308,18 +311,64 @@ if __name__ == '__main__':
     recall = recall_score(y_trues, y_preds, average='weighted')
     f1 = f1_score(y_trues, y_preds, average='weighted')
 
+
     # Print the results
+    print('Total training time: {:.7f} s'.format(end_training_time - start_training_time))
     print('Accuracy:', accuracy)
     print('Precision:', precision)
     print('Recall:', recall)
     print('F1-score:', f1)
-    print("Average Inference Time: {:.7f} seconds".format(average_inference_time))
+    print("Average Inference Time GPU: {:.7f} seconds".format(average_inference_time))
+
+    # EVALUATION on CPU.
+    model = model.to('cpu')
+    eval_loader, _ = load_dataset([test_data_file], 32)
+
+    print('Evaluation on CPU.')
+    run_loss = 0.0
+    run_accu = 0.0
+    y_preds = []
+    y_trues = []
+    total_time = 0.0
+    num_samples = 0
+
+    with tqdm(eval_loader, desc='eval') as iterator:
+        for pts, lbs in iterator:
+            pts = pts.to('cpu')
+            lbs = lbs.to('cpu')
+            start_time = time.time()
+
+            out = model(pts)
+            end_time = time.time()
+
+            loss = losser(out, lbs)
+
+            run_loss += loss.item()
+            accu = accuracy_batch(out.detach().cpu().numpy(),
+                                  lbs.detach().cpu().numpy())
+            run_accu += accu
+
+            y_preds.extend(out.argmax(1).detach().cpu().numpy())
+            y_trues.extend(lbs.argmax(1).cpu().numpy())
+
+            iterator.set_postfix_str(' loss: {:.4f}, accu: {:.4f}'.format(
+                loss.item(), accu))
+            iterator.update()
+
+            total_time += end_time - start_time
+            num_samples += pts.size(0)
+
+    average_cpu_inference_time = total_time / num_samples
+    print("\nAverage Inference Time CPU: {:.7f} seconds".format(average_cpu_inference_time))
+
 
     # Save results to "result.txt" file
     with open(os.path.join(save_folder, 'result.txt'), "w") as f:
+        f.write("Total training time: {:.7f} s\n".format(end_training_time - start_training_time))
         f.write("Eval Loss: {:.7f}, Accu: {:.7f}\n".format(run_loss, run_accu))
         f.write("Accuracy: {:.7f}\n".format(accuracy))
         f.write("Precision: {:.7f}\n".format(precision))
         f.write("Recall: {:.7f}\n".format(recall))
         f.write("F1-score: {:.7f}\n".format(f1))
         f.write("Average Inference Time: {:.7f} seconds".format(average_inference_time))
+        f.write("Average Inference Time CPU: {:.7f} seconds".format(average_cpu_inference_time))
