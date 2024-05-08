@@ -82,7 +82,7 @@ class st_gcn(nn.Module):
     """
     def __init__(self, in_channels, out_channels, kernel_size,
                  stride=1,
-                 dropout=0,
+                 dropout=0.5,
                  residual=True):
         super().__init__()
         assert len(kernel_size) == 2
@@ -225,9 +225,10 @@ class OneStream_STGCN(nn.Module):
 
     def __init__(self, num_class, graph_args, edge_importance_weighting=True, **kwargs):
         super().__init__()
+        print("====== OneStream_STGCN ======")
         self.st_gcn = StreamSpatialTemporalGraph(3, graph_args, None,
                                                   edge_importance_weighting, **kwargs)
-        self.fcn = nn.Linear(1024, num_class)
+        self.fcn = nn.Linear(256, num_class)
 
     def forward(self, inputs):
         out = self.st_gcn(inputs)
@@ -254,6 +255,8 @@ class TwoStream_STGCN(nn.Module):
     def __init__(self, num_class, graph_args, edge_importance_weighting=True,
                  **kwargs):
         super().__init__()
+        print("====== TwoStream_STGCN ======")
+
         self.pts_stream = StreamSpatialTemporalGraph(3, graph_args, None,
                                                      edge_importance_weighting,
                                                      **kwargs)

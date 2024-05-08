@@ -38,7 +38,7 @@ class GraphConvolution(nn.Module):
 class STGCN_Layer(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size,
                  stride=1,
-                 dropout=0):
+                 dropout=0.5):
         super().__init__()
         assert len(kernel_size) == 2
         assert kernel_size[0] % 2 == 1
@@ -155,6 +155,8 @@ class StreamSpatialTemporalGraph(nn.Module):
 
 class Exp_DenseSTGCN_1S(nn.Module):
     def __init__(self, num_class, graph_args, n_layers=6, edge_importance_weighting=True, **kwargs):
+        print("====== Exp_DenseSTGCN_1S ======")
+
         super().__init__()
         self.st_gcn = StreamSpatialTemporalGraph(in_channels= 3, 
                                                 graph_args = graph_args, 
@@ -172,6 +174,8 @@ class Exp_DenseSTGCN_1S(nn.Module):
 class Exp_DenseSTGCN_2S(nn.Module):
     def __init__(self, num_class, graph_args, n_layers=6, edge_importance_weighting=True,
                  **kwargs):
+        print("====== Exp_DenseSTGCN_2S ======")
+
         super().__init__()
         
 

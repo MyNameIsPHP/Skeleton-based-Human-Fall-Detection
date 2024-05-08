@@ -38,7 +38,7 @@ class GraphConvolution(nn.Module):
 class STGCN_Layer(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size,
                  stride=1,
-                 dropout=0):
+                 dropout=0.5):
         super().__init__()
         assert len(kernel_size) == 2
         assert kernel_size[0] % 2 == 1
@@ -71,7 +71,7 @@ class OneShot_STGCN_Block(nn.ModuleDict):
 
         layers = dict()
         for i in range(n_layers):
-            layer = STGCN_Layer(in_channels, 32 , kernel_size, 1, **kwargs)
+            layer = STGCN_Layer(in_channels, in_channels , kernel_size, 1, **kwargs)
             layers['conv{}'.format(i)] = layer
 
         self.block = nn.ModuleDict(layers)
@@ -114,6 +114,11 @@ class StreamSpatialTemporalGraph(nn.Module):
                                             n_layers=n_layers,
                                             kernel_size = kernel_size, 
                                             **kwargs)
+        # self.dense_block_2 = OneShot_STGCN_Block(
+        #                             in_channels=192,
+        #                             n_layers=n_layers,
+        #                             kernel_size = kernel_size, 
+        #                             **kwargs)
 
         # initialize parameters for edge importance weighting.
         if edge_importance_weighting:
@@ -140,6 +145,7 @@ class StreamSpatialTemporalGraph(nn.Module):
         x = x.view(N, C, T, V)
         x = self.gcn_0(x, self.A * self.edge_importance[0])
         x = self.dense_block(x, self.A, self.edge_importance)
+        # x = self.dense_block_2(x, self.A, self.edge_importance)
 
         x = F.avg_pool2d(x, x.size()[2:])
         x = self.cls(x)
@@ -152,14 +158,15 @@ class OneShot_STGCN_1S(nn.Module):
     def __init__(self, num_class, graph_args, n_layers=6, edge_importance_weighting=True, **kwargs):
         super().__init__()
       
-        
+        print("====== OneShot_STGCN_1S ======")
+
         self.st_gcn = StreamSpatialTemporalGraph(in_channels= 3, 
                                                 graph_args = graph_args, 
                                                 num_class= None,
                                                 n_layers=n_layers,
                                                 edge_importance_weighting = edge_importance_weighting,
                                                 **kwargs)
-        self.fcn = nn.Linear(32 + (n_layers * 32), num_class)
+        self.fcn = nn.Linear(32 + ((n_layers-1) * 32), num_class)
 
     def forward(self, inputs):
 
@@ -172,6 +179,7 @@ class OneShot_STGCN_2S(nn.Module):
                  **kwargs):
         super().__init__()
         
+        print("====== OneShot_STGCN_2S ======")
 
         self.pts_stream = StreamSpatialTemporalGraph(in_channels= 3, 
                                                      graph_args = graph_args, 
@@ -186,7 +194,7 @@ class OneShot_STGCN_2S(nn.Module):
                                                      edge_importance_weighting = edge_importance_weighting,
                                                      **kwargs)
 
-        self.fcn = nn.Linear(256, num_class)
+        self.fcn = nn.Linear(2 * (32 + ((n_layers-1) * 32)), num_class)
 
     def forward(self, joints):
         motions = joints[:, :2, 1:, :] - joints[:, :2, :-1, :]

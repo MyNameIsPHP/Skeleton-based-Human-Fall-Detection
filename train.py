@@ -25,12 +25,14 @@ import csv
 from torchinfo import summary
 from fvcore.nn import FlopCountAnalysis, parameter_count
 from thop import profile
+import argparse
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_curve
+from sklearn.metrics import auc
 
 
 
-device = 'cuda'
-epochs = 2
-batch_size = 32
+
 
 # DATA FILES.
 # Should be in format of
@@ -43,14 +45,58 @@ batch_size = 32
 #   graph_node: Number of node in skeleton, Default: 14
 #   channels: Inputs data (x, y and scores), Default: 3
 #   num_class: Number of pose class to train, Default: 7
-model_name = 'STGCN_2S'
-dataset_name = "URFD_2classes"
+
+parser = argparse.ArgumentParser(description='Train a fall detection model.')
+parser.add_argument('--device', type=str, default='cuda', help='Device to use for training (cuda or cpu)')
+parser.add_argument('--epochs', type=int, default=80, help='Number of epochs to train')
+parser.add_argument('--batch_size', type=int, default=32, help='Batch size for training')
+parser.add_argument('--model_name', type=str, default='OneShot_STGCN_2S', help='Name of the model')
+parser.add_argument('--dataset_name', type=str, default='Le2i_2classes_1', help='Name of the dataset')
+parser.add_argument('--num_layer', type=int, default=6, help='Name of the dataset')
+
+args = parser.parse_args()
+# Example running script
+# python train.py --model_name STGCN_1S --dataset_name Le2i_2classes_1
+# python train.py --model_name Lin_DenseSTGCN_1S --dataset_name Le2i_2classes_1 --num_layer 1
+# python train.py --model_name Lin_DenseSTGCN_1S --dataset_name Le2i_2classes_1 --num_layer 2
+# python train.py --model_name Lin_DenseSTGCN_1S --dataset_name Le2i_2classes_1 --num_layer 3
+# python train.py --model_name Lin_DenseSTGCN_1S --dataset_name Le2i_2classes_1 --num_layer 4
+# python train.py --model_name Lin_DenseSTGCN_1S --dataset_name Le2i_2classes_1 --num_layer 5
+# python train.py --model_name Lin_DenseSTGCN_1S --dataset_name Le2i_2classes_1 --num_layer 6
+
+# python train.py --model_name Exp_DenseSTGCN_1S --dataset_name Le2i_2classes_1 --num_layer 1
+# python train.py --model_name Exp_DenseSTGCN_1S --dataset_name Le2i_2classes_1 --num_layer 2
+# python train.py --model_name Exp_DenseSTGCN_1S --dataset_name Le2i_2classes_1 --num_layer 3
+# python train.py --model_name Exp_DenseSTGCN_1S --dataset_name Le2i_2classes_1 --num_layer 4
+
+# python train.py --model_name OneShot_STGCN_1S --dataset_name Le2i_2classes_1 --num_layer 1
+# python train.py --model_name OneShot_STGCN_1S --dataset_name Le2i_2classes_1 --num_layer 2
+# python train.py --model_name OneShot_STGCN_1S --dataset_name Le2i_2classes_1 --num_layer 3
+# python train.py --model_name OneShot_STGCN_1S --dataset_name Le2i_2classes_1 --num_layer 4
+# python train.py --model_name OneShot_STGCN_1S --dataset_name Le2i_2classes_1 --num_layer 5
+# python train.py --model_name OneShot_STGCN_1S --dataset_name Le2i_2classes_1 --num_layer 6
+
+
+# python train.py --model_name STGCN_2S --dataset_name Le2i_2classes_1
+# python train.py --model_name Lin_DenseSTGCN_2S --dataset_name Le2i_2classes_1 --num_layer 6
+# python train.py --model_name Exp_DenseSTGCN_2S --dataset_name Le2i_2classes_1 --num_layer 4
+# python train.py --model_name OneShot_STGCN_2S --dataset_name Le2i_2classes_1 --num_layer 6
+
+# Tommorow: lower layers of STGCN, more block of Dense and OneShot
+
+device = args.device
+epochs = args.epochs
+batch_size = args.batch_size
+model_name = args.model_name
+dataset_name = args.dataset_name
+num_layer = args.num_layer
 save_folder = f'Result/{dataset_name}/{model_name}_{time.strftime("%Y%m%d%H%M%S")}'
 train_data_file = f'DataFiles/{dataset_name}/train.pkl'
 val_data_file = f'DataFiles/{dataset_name}/val.pkl'
 test_data_file = f'DataFiles/{dataset_name}/test.pkl'
 eval_only = False
 class_names = ['Not fall', 'Fall']
+
 # class_names = ['Not fall', 'Falling', 'Fall']
 
 num_class = len(class_names)
@@ -124,24 +170,24 @@ if __name__ == '__main__':
 
     # MODEL.
     graph_args = {'strategy': 'spatial'}
-    if (model_name == 'STGCN_1S'):
-        model =OneStream_STGCN(graph_args=graph_args, num_class=num_class).to(device)
+    if (model_name == "STGCN_1S"):
+        model = OneStream_STGCN(graph_args=graph_args, num_class=num_class).to(device)
     elif (model_name == "STGCN_2S"):
         model = TwoStream_STGCN(graph_args=graph_args, num_class=num_class).to(device)
     elif (model_name == "Lin_DenseSTGCN_1S"):
-        model = Lin_DenseSTGCN_1S(graph_args=graph_args, num_class=num_class, n_layers=6).to(device)
+        model = Lin_DenseSTGCN_1S(graph_args=graph_args, num_class=num_class, n_layers=num_layer).to(device)
     elif (model_name == "Lin_DenseSTGCN_2S"):
-        model = Lin_DenseSTGCN_2S(graph_args=graph_args, num_class=num_class, n_layers=6).to(device)
+        model = Lin_DenseSTGCN_2S(graph_args=graph_args, num_class=num_class, n_layers=num_layer).to(device)
     elif (model_name == "Exp_DenseSTGCN_1S"):
-        model = Exp_DenseSTGCN_1S(graph_args=graph_args, num_class=num_class, n_layers=4).to(device)
+        model = Exp_DenseSTGCN_1S(graph_args=graph_args, num_class=num_class, n_layers=num_layer).to(device)
     elif (model_name == "Exp_DenseSTGCN_2S"):
-        model = Exp_DenseSTGCN_2S(graph_args=graph_args, num_class=num_class, n_layers=4).to(device)
+        model = Exp_DenseSTGCN_2S(graph_args=graph_args, num_class=num_class, n_layers=num_layer).to(device)
     elif (model_name == "OneShot_STGCN_1S"):
-        model = OneShot_STGCN_1S(num_class=num_class, graph_args=graph_args, n_layers=6).to(device)
+        model = OneShot_STGCN_1S(num_class=num_class, graph_args=graph_args, n_layers=num_layer).to(device)
     elif (model_name == "OneShot_STGCN_2S"):
-        model = OneShot_STGCN_2S(num_class=num_class, graph_args=graph_args, n_layers=6).to(device)
+        model = OneShot_STGCN_2S(num_class=num_class, graph_args=graph_args, n_layers=num_layer).to(device)
     else:
-        model = OneShot_STGCN_2S(graph_args=graph_args, num_class=num_class, n_layers=4).to(device)
+        model = OneShot_STGCN_2S(graph_args=graph_args, num_class=num_class, n_layers=num_layer).to(device)
     
     # Use torchinfo to summarize the model
     input_shape = tuple(train_loader.dataset[0][0].shape)
