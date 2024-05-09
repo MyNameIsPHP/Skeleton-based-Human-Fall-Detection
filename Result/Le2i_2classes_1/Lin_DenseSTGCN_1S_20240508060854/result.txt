@@ -1,7 +1,0 @@
-Total training time: 746.1917074 s
-Eval Loss: 45.5004213, Accu: 103.7500000
-Accuracy: 0.9880419
-Precision: 0.9881080
-Recall: 0.9880419
-F1-score: 0.9874285
-Average Inference Time: 0.0000641 secondsAverage Inference Time CPU: 0.0007797 seconds

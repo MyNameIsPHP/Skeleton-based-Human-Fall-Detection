@@ -2,7 +2,7 @@ import os
 import torch
 import numpy as np
 
-from ActionRecognitionModels import TwoStreamSpatialTemporalGraph
+from Network.stgcn import TwoStream_STGCN
 from pose_utils import normalize_points_with_size, scale_pose
 
 
@@ -13,16 +13,16 @@ class TSSTG(object):
         device: (str) Device to load the model on 'cpu' or 'cuda'.
     """
     def __init__(self,
-                 weight_file='Models/TSSTG/tsstg-model.pth',
+                 weight_file='Weights/TSSTG/tsstg-model.pth',
                  device='cuda'):
         self.graph_args = {'strategy': 'spatial'}
-        # self.class_names = ['Standing', 'Walking', 'Sitting', 'Lying Down',
-        #                     'Stand up', 'Sit down', 'Fall Down']
-        self.class_names = ['Not Fall', 'Fall']
+        self.class_names = ['Standing', 'Walking', 'Sitting', 'Lying Down',
+                            'Stand up', 'Sit down', 'Fall Down']
+        # self.class_names = ['Not Fall', 'Fall']
         self.num_class = len(self.class_names)
         self.device = device
 
-        self.model = TwoStreamSpatialTemporalGraph(self.graph_args, self.num_class).to(self.device)
+        self.model = TwoStream_STGCN(num_class = self.num_class, graph_args = self.graph_args).to(self.device)
         self.model.load_state_dict(torch.load(weight_file))
         self.model.eval()
 
@@ -44,10 +44,9 @@ class TSSTG(object):
         pts = torch.tensor(pts, dtype=torch.float32)
         pts = pts.permute(2, 0, 1)[None, :]
 
-        mot = pts[:, :2, 1:, :] - pts[:, :2, :-1, :]
-        mot = mot.to(self.device)
+
         pts = pts.to(self.device)
 
-        out = self.model((pts, mot))
+        out = self.model(pts)
 
         return out.detach().cpu().numpy()

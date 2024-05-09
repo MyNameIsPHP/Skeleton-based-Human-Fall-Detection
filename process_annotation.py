@@ -9,14 +9,14 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-csv_pose_file = 'DataFiles/Le2i_annotations/pose_le2i_2classes.csv'
-save_dir = 'DataFiles/Le2i_2classes_1'
+csv_pose_file = 'Annotations/URFD_annotations/pose_urfd_3classes.csv'
+save_dir = 'DataFiles/URFD_3classes'
 
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 
-class_names = ['Not fall', 'Fall']
-# class_names = ['Not fall', 'Falling', 'Fall']
+# class_names = ['Not fall', 'Fall']
+class_names = ['Not fall', 'Falling', 'Fall']
 
 main_parts = ['LShoulder_x', 'LShoulder_y', 'RShoulder_x', 'RShoulder_y', 'LHip_x', 'LHip_y',
               'RHip_x', 'RHip_y']

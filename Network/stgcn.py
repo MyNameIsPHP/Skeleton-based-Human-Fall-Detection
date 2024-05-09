@@ -178,7 +178,6 @@ class StreamSpatialTemporalGraph(nn.Module):
             ])
         else:
             self.edge_importance = [1] * len(self.st_gcn_networks)
-        print(self.edge_importance)
         if num_class is not None:
             self.cls = nn.Conv2d(256, num_class, kernel_size=1)
         else:

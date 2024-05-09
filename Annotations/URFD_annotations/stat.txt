@@ -1,0 +1,4 @@
+0    1107
+1     937
+2     895
+Name: count, dtype: int64

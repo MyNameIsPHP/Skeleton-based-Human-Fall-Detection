@@ -99,9 +99,9 @@ if __name__ == '__main__':
         writer = cv2.VideoWriter(args.save_out, codec, 30, (inp_dets * 2, inp_dets * 2))
 
     fps_time = 0
-    f = 0
+    f_deg = 0
     while cam.grabbed():
-        f += 1
+        f_deg += 1
         frame = cam.getitem()
         image = frame.copy()
 
@@ -152,7 +152,6 @@ if __name__ == '__main__':
             if len(track.keypoints_list) == 30:
                 pts = np.array(track.keypoints_list, dtype=np.float32)
                 out = action_model.predict(pts, frame.shape[:2])
-                print(out[0])
                 action_name = action_model.class_names[out[0].argmax()]
                 action = '{}: {:.2f}%'.format(action_name, out[0].max() * 100)
                 if action_name == 'Not Fall':
@@ -172,7 +171,7 @@ if __name__ == '__main__':
 
         # Show Frame.
         frame = cv2.resize(frame, (0, 0), fx=2., fy=2.)
-        frame = cv2.putText(frame, '%d, FPS: %f' % (f, 1.0 / (time.time() - fps_time)),
+        frame = cv2.putText(frame, '%d, FPS: %f' % (f_deg, 1.0 / (time.time() - fps_time)),
                             (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
         frame = frame[:, :, ::-1]
         fps_time = time.time()

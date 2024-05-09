@@ -17,7 +17,8 @@ from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_sc
 from Network.stgcn import *
 from Network.linear_dense_stgcn import *
 from Network.exponential_dense_stgcn import *
-from Network.oneshot_stgcn import *
+# from Network.oneshot_stgcn import *
+from Network.oneshot_stgcn_332 import *
 
 # from Network.dense_2 import *
 
@@ -95,9 +96,9 @@ train_data_file = f'DataFiles/{dataset_name}/train.pkl'
 val_data_file = f'DataFiles/{dataset_name}/val.pkl'
 test_data_file = f'DataFiles/{dataset_name}/test.pkl'
 eval_only = False
-class_names = ['Not fall', 'Fall']
+# class_names = ['Not fall', 'Fall']
 
-# class_names = ['Not fall', 'Falling', 'Fall']
+class_names = ['Not fall', 'Falling', 'Fall']
 
 num_class = len(class_names)
 
@@ -187,8 +188,9 @@ if __name__ == '__main__':
     elif (model_name == "OneShot_STGCN_2S"):
         model = OneShot_STGCN_2S(num_class=num_class, graph_args=graph_args, n_layers=num_layer).to(device)
     else:
-        model = OneShot_STGCN_2S(graph_args=graph_args, num_class=num_class, n_layers=num_layer).to(device)
-    
+        model = OneShot_STGCN_1S(graph_args=graph_args, num_class=num_class).to(device)
+        
+
     # Use torchinfo to summarize the model
     input_shape = tuple(train_loader.dataset[0][0].shape)
         
@@ -365,6 +367,15 @@ if __name__ == '__main__':
     print('Recall:', recall)
     print('F1-score:', f1)
     print("Average Inference Time GPU: {:.7f} seconds".format(average_inference_time))
+    
+    with open(os.path.join(save_folder, 'result.txt'), "w") as f:
+        f.write("Total training time: {:.7f} s\n".format(end_training_time - start_training_time))
+        f.write("Eval Loss: {:.7f}, Accu: {:.7f}\n".format(run_loss, run_accu))
+        f.write("Accuracy: {:.7f}\n".format(accuracy))
+        f.write("Precision: {:.7f}\n".format(precision))
+        f.write("Recall: {:.7f}\n".format(recall))
+        f.write("F1-score: {:.7f}\n".format(f1))
+        f.write("Average Inference Time: {:.7f} seconds\n".format(average_inference_time))
 
     # EVALUATION on CPU.
     model = model.to('cpu')
@@ -409,12 +420,5 @@ if __name__ == '__main__':
 
 
     # Save results to "result.txt" file
-    with open(os.path.join(save_folder, 'result.txt'), "w") as f:
-        f.write("Total training time: {:.7f} s\n".format(end_training_time - start_training_time))
-        f.write("Eval Loss: {:.7f}, Accu: {:.7f}\n".format(run_loss, run_accu))
-        f.write("Accuracy: {:.7f}\n".format(accuracy))
-        f.write("Precision: {:.7f}\n".format(precision))
-        f.write("Recall: {:.7f}\n".format(recall))
-        f.write("F1-score: {:.7f}\n".format(f1))
-        f.write("Average Inference Time: {:.7f} seconds".format(average_inference_time))
+    with open(os.path.join(save_folder, 'result.txt'), "a") as f:
         f.write("Average Inference Time CPU: {:.7f} seconds".format(average_cpu_inference_time))
