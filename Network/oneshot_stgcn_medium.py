@@ -167,11 +167,11 @@ class StreamSpatialTemporalGraph(nn.Module):
         return x
 
 
-class OneShot_STGCN_1S(nn.Module):
+class OSA_STGCN_medium_1S(nn.Module):
     def __init__(self, num_class, graph_args, edge_importance_weighting=True, **kwargs):
         super().__init__()
       
-        print("====== OneShot_STGCN_1S ======")
+        print("====== OSA_STGCN_medium_1S_222 ======")
 
         self.st_gcn = StreamSpatialTemporalGraph(in_channels= 3, 
                                                 graph_args = graph_args, 
@@ -186,12 +186,12 @@ class OneShot_STGCN_1S(nn.Module):
         out = self.fcn(out)
         return torch.sigmoid(out)
 
-class OneShot_STGCN_2S(nn.Module):
+class OSA_STGCN_medium_2S(nn.Module):
     def __init__(self, num_class, graph_args, edge_importance_weighting=True,
                  **kwargs):
         super().__init__()
         
-        print("====== OneShot_STGCN_2S ======")
+        print("====== OSA_STGCN_medium_2S ======")
 
         self.pts_stream = StreamSpatialTemporalGraph(in_channels= 3, 
                                                      graph_args = graph_args, 

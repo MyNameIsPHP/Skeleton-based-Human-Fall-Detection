@@ -17,8 +17,7 @@ from sklearn.metrics import precision_score, recall_score, f1_score, accuracy_sc
 from Network.stgcn import *
 from Network.linear_dense_stgcn import *
 from Network.exponential_dense_stgcn import *
-# from Network.oneshot_stgcn import *
-from Network.oneshot_stgcn_332 import *
+from Network.oneshot_stgcn_nano import *
 
 # from Network.dense_2 import *
 

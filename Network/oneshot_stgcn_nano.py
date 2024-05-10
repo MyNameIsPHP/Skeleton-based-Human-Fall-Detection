@@ -62,6 +62,8 @@ class STGCN_Layer(nn.Module):
     def forward(self, x, A):
         x = self.gcn(x, A)
         x = self.tcn(x) 
+        print("###########", x.shape)
+
         return self.relu(x)
 
 
@@ -100,9 +102,9 @@ class StreamSpatialTemporalGraph(nn.Module):
 
         # Networks.
         spatial_kernel_size = A.size(0)
+
         temporal_kernel_size = 9
         kernel_size = (temporal_kernel_size, spatial_kernel_size)
-
         self.data_bn = nn.BatchNorm1d(in_channels * A.size(1))
 
         self.residual_0 = nn.Sequential()
@@ -116,15 +118,20 @@ class StreamSpatialTemporalGraph(nn.Module):
                                             **kwargs)
         self.osa_block_1 = OneShot_STGCN_Block(
                                                 in_channels=64,
-                                                n_layers=5,
+                                                n_layers=2,
                                                 kernel_size = kernel_size, 
                                                 **kwargs)
 
-
+        # self.osa_block_3 = OneShot_STGCN_Block(
+        #                                 in_channels=256,
+        #                                 n_layers=2,
+        #                                 kernel_size = kernel_size, 
+        #                                 **kwargs)
+        # initialize parameters for edge importance weighting.
         if edge_importance_weighting:
             self.edge_importance = nn.ParameterList([
                 nn.Parameter(torch.ones(A.size()))
-                for i in range(2 + 5 + 1)
+                for i in range(2 * 2 + 1)
             ])
         else:
             self.edge_importance = [1] * len(self.st_gcn_networks)
@@ -146,8 +153,8 @@ class StreamSpatialTemporalGraph(nn.Module):
 
         x = self.gcn_0(x, self.A * self.edge_importance[0])
         x = self.osa_block_0(x, self.A, self.edge_importance[1:3])
-        x = self.osa_block_1(x, self.A, self.edge_importance[3:8])
-
+        x = self.osa_block_1(x, self.A, self.edge_importance[3:5])
+        print("@@@@@@@@@@@@@@@@@@", x.size()[2:])
         x = F.avg_pool2d(x, x.size()[2:])
         x = self.cls(x)
         x = x.view(x.size(0), -1)
@@ -155,18 +162,18 @@ class StreamSpatialTemporalGraph(nn.Module):
         return x
 
 
-class OneShot_STGCN_1S(nn.Module):
+class OSA_STGCN_nano_1S(nn.Module):
     def __init__(self, num_class, graph_args, edge_importance_weighting=True, **kwargs):
         super().__init__()
       
-        print("====== OneShot_STGCN_1S ======")
+        print("====== OSA_STGCN_nano_1S ======")
 
         self.st_gcn = StreamSpatialTemporalGraph(in_channels= 3, 
                                                 graph_args = graph_args, 
                                                 num_class= None,
                                                 edge_importance_weighting = edge_importance_weighting,
                                                 **kwargs)
-        self.fcn = nn.Linear(320, num_class)
+        self.fcn = nn.Linear(128, num_class)
 
     def forward(self, inputs):
 
@@ -174,12 +181,12 @@ class OneShot_STGCN_1S(nn.Module):
         out = self.fcn(out)
         return torch.sigmoid(out)
 
-class OneShot_STGCN_2S(nn.Module):
+class OSA_STGCN_nano_2S(nn.Module):
     def __init__(self, num_class, graph_args, edge_importance_weighting=True,
                  **kwargs):
         super().__init__()
         
-        print("====== OneShot_STGCN_2S ======")
+        print("====== OSA_STGCN_nano_2S ======")
 
         self.pts_stream = StreamSpatialTemporalGraph(in_channels= 3, 
                                                      graph_args = graph_args, 
