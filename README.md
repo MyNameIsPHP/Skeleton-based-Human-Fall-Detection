@@ -1,7 +1,21 @@
 # Skeleton-based-Human-Fall-Detection
-Download UR Fall Detection dataset 
 
-Download pretrained models 
+
+<table align="center">
+  <tr>
+    <td>
+      <img src="https://github.com/MyNameIsPHP/Skeleton-based-Human-Fall-Detection/blob/main/example_output_1.gif" width="80%" height="80%">
+    </td>
+    <td>
+      <img src="https://github.com/MyNameIsPHP/Skeleton-based-Human-Fall-Detection/blob/main/example_output_2.gif" width="80%" height="80%">
+    </td>
+    <td>
+      <img src="https://github.com/MyNameIsPHP/Skeleton-based-Human-Fall-Detection/blob/main/example_output_3.gif" width="80%" height="80%">
+    </td>
+  </tr>
+</table>
+
+
 
 ## Installation
 - Python 3.9
