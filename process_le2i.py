@@ -25,8 +25,8 @@ inp_w = 256
 
 
 detect_model = TinyYOLOv3_onecls(device='cuda')
-pose_estimator = SPPE_FastPose('resnet50', inp_h, inp_w)
-save_name = 'Annotations/Le2i_annotations/pose_le2i'
+pose_estimator = SPPE_FastPose('resnet50', inp_h, inp_w, device='cuda')
+save_name = 'Annotations/Le2i_annotations/pose_le2i_test'
 
 #make dir if not exist
 save_name_dir = os.path.dirname(save_name)

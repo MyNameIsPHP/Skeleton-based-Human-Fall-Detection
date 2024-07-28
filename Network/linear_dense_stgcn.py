@@ -170,7 +170,7 @@ class Lin_DenseSTGCN_1S(nn.Module):
         return torch.sigmoid(out)
 
 class Lin_DenseSTGCN_2S(nn.Module):
-    def __init__(self, num_class, graph_args, n_layers=6, edge_importance_weighting=True,
+    def __init__(self, num_class, graph_args, n_layers=12, edge_importance_weighting=True,
                  **kwargs):
         print("====== Lin_DenseSTGCN_2S ======")
 

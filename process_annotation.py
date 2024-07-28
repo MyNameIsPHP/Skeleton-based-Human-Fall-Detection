@@ -9,18 +9,19 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-csv_pose_file = 'Annotations/URFD_annotations/pose_urfd_3classes.csv'
-save_dir = 'DataFiles/URFD_3classes'
+csv_pose_file = 'Annotations/all_data.csv'
+save_dir = 'DataFiles/All_2classes'
 
 if not os.path.exists(save_dir):
     os.makedirs(save_dir)
 
-# class_names = ['Not fall', 'Fall']
-class_names = ['Not fall', 'Falling', 'Fall']
+class_names = ['Not fall', 'Fall']
+# class_names = ['Not fall', 'Falling', 'Fall']
 
 main_parts = ['LShoulder_x', 'LShoulder_y', 'RShoulder_x', 'RShoulder_y', 'LHip_x', 'LHip_y',
               'RHip_x', 'RHip_y']
 main_idx_parts = [1, 2, 7, 8, -1]  # 1.5
+
 
 
 # Params.
@@ -29,11 +30,18 @@ n_frames = 30
 skip_frame = 1
 
 annot = pd.read_csv(csv_pose_file)
+# Columns: video,frame,Nose_x,Nose_y,Nose_s,LShoulder_x,LShoulder_y,LShoulder_s,RShoulder_x,RShoulder_y,RShoulder_s,LElbow_x,LElbow_y,LElbow_s,RElbow_x,RElbow_y,RElbow_s,LWrist_x,LWrist_y,LWrist_s,RWrist_x,RWrist_y,RWrist_s,LHip_x,LHip_y,LHip_s,RHip_x,RHip_y,RHip_s,LKnee_x,LKnee_y,LKnee_s,RKnee_x,RKnee_y,RKnee_s,LAnkle_x,LAnkle_y,LAnkle_s,RAnkle_x,RAnkle_y,RAnkle_s,label
+# label columns: 0 -> Not Fall, 1 -> Falling, 2 -> Fall
 
 # Remove NaN.
 idx = annot.iloc[:, 2:-1][main_parts].isna().sum(1) > 0
 idx = np.where(idx)[0]
 annot = annot.drop(idx)
+
+if len(class_names) == 2:
+    # remove 'Falling' class.
+    annot = annot[annot['label'] != 1]
+
 # One-Hot Labels.
 label_onehot = pd.get_dummies(annot['label'])
 annot = annot.drop('label', axis=1).join(label_onehot)
@@ -106,6 +114,7 @@ for vid in vid_list:
     frames_set.append(fs)
 
     for fs in frames_set:
+        print(f'Frames: {fs[0]} - {fs[-1]}')
         xys = data.iloc[fs, 1:-len(cols)].values.reshape(-1, 13, 3)
         # Scale pose normalize.
         xys[:, :, :2] = scale_pose(xys[:, :, :2])

@@ -14,9 +14,9 @@ from fn import draw_single
 from Track.Tracker import Detection, Tracker
 from FallDetectorLoader import TSSTG
 
-# source = '0'
-source =  "Videos/vid2.mp4"
-
+source = '0'
+source =  "Data/Le2i/Home_01/Videos/video (1).avi"
+# source = "Videos/vid7.mp4"
 
 def preproc(image):
     """preprocess function for CameraLoader.
@@ -65,10 +65,12 @@ if __name__ == '__main__':
     inp_dets = args.detection_input_size
     print("!!!!!", inp_dets, device)
     detect_model = TinyYOLOv3_onecls(inp_dets, device=device)
+    # detect_model = TinyYOLOv3_onecls(device=device)
 
     # POSE MODEL.
     inp_pose = args.pose_input_size.split('x')
     inp_pose = (int(inp_pose[0]), int(inp_pose[1]))
+    print("#####", inp_pose)
     pose_model = SPPE_FastPose(args.pose_backbone, inp_pose[0], inp_pose[1], device=device)
 
     # Tracker.
@@ -96,10 +98,15 @@ if __name__ == '__main__':
     if args.save_out != '':
         outvid = True
         codec = cv2.VideoWriter_fourcc(*'MJPG')
+        # print(inp_dets * 2, inp_dets * 2)
         writer = cv2.VideoWriter(args.save_out, codec, 30, (inp_dets * 2, inp_dets * 2))
+        
 
     fps_time = 0
     f_deg = 0
+    fps_total = 0
+    fps_count = 0
+    start_time = time.time()
     while cam.grabbed():
         f_deg += 1
         frame = cam.getitem()
@@ -107,7 +114,8 @@ if __name__ == '__main__':
 
         # Detect humans bbox in the frame with detector model.
         # print("$$$$$", detect_model.detect(frame))
-        detected = detect_model.detect(frame, need_resize=False, expand_bb=10)
+        detected = detect_model.detect(frame, expand_bb=10)
+        # detected = detect_model.detect(frame, need_resize=False, expand_bb=10)
 
         # Predict each tracks bbox of current frame from previous frames information with Kalman filter.
         tracker.predict()
@@ -155,36 +163,44 @@ if __name__ == '__main__':
                 action_name = action_model.class_names[out[0].argmax()]
                 action = '{}: {:.2f}%'.format(action_name, out[0].max() * 100)
                 if action_name == 'Not Fall':
-                    clr = (255, 0, 0)
-                elif action_name == 'Fall':
+                    clr = (0, 255, 0)
+                elif action_name == 'Falling':
                     clr = (255, 200, 0)
-
+                elif action_name == 'Fall Detected':
+                    clr = (255, 0, 0)
+            
             # VISUALIZE.
             if track.time_since_update == 0:
                 if args.show_skeleton:
                     frame = draw_single(frame, track.keypoints_list[-1])
-                frame = cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), (0, 255, 0), 1)
+                frame = cv2.rectangle(frame, (bbox[0], bbox[1]), (bbox[2], bbox[3]), clr, 1)
                 frame = cv2.putText(frame, str(track_id), (center[0], center[1]), cv2.FONT_HERSHEY_COMPLEX,
                                     0.4, (255, 0, 0), 2)
                 frame = cv2.putText(frame, action, (bbox[0] + 5, bbox[1] + 15), cv2.FONT_HERSHEY_COMPLEX,
                                     0.4, clr, 1)
 
         # Show Frame.
-        frame = cv2.resize(frame, (0, 0), fx=2., fy=2.)
+        # frame = cv2.resize(frame, (0, 0), fx=2., fy=2.)
         frame = cv2.putText(frame, '%d, FPS: %f' % (f_deg, 1.0 / (time.time() - fps_time)),
                             (10, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
+        fps_total += 1.0 / (time.time() - fps_time)
+        fps_count += 1
         frame = frame[:, :, ::-1]
         fps_time = time.time()
 
         if outvid:
+            frame= cv2.resize(frame, (inp_dets * 2, inp_dets * 2))
+            print(frame.shape)
             writer.write(frame)
 
         cv2.imshow('frame', frame)
         if cv2.waitKey(1) & 0xFF == ord('q'):
             break
-
+    end_time = time.time()
     # Clear resource.
     cam.stop()
     if outvid:
         writer.release()
+    print("Average FPS: ", fps_total / fps_count)
+    print("Average FPS: ", fps_count / (end_time - start_time))
     cv2.destroyAllWindows()

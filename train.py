@@ -1,3 +1,5 @@
+# Example: python train.py --model_name OSA_STGCN_nano_1S --dataset_name All_2classes --num_class 2 
+
 import os
 import time
 import torch
@@ -18,6 +20,9 @@ from Network.stgcn import *
 from Network.linear_dense_stgcn import *
 from Network.exponential_dense_stgcn import *
 from Network.oneshot_stgcn_nano import *
+from Network.oneshot_stgcn_small import *
+from Network.oneshot_stgcn_medium import *
+from Network.oneshot_stgcn_large import *
 
 # from Network.dense_2 import *
 
@@ -29,10 +34,6 @@ import argparse
 from sklearn.metrics import roc_auc_score
 from sklearn.metrics import roc_curve
 from sklearn.metrics import auc
-
-
-
-
 
 # DATA FILES.
 # Should be in format of
@@ -53,36 +54,12 @@ parser.add_argument('--batch_size', type=int, default=32, help='Batch size for t
 parser.add_argument('--model_name', type=str, default='OneShot_STGCN_2S', help='Name of the model')
 parser.add_argument('--dataset_name', type=str, default='Le2i_2classes_1', help='Name of the dataset')
 parser.add_argument('--num_layer', type=int, default=6, help='Name of the dataset')
+parser.add_argument('--num_class', type=int, default=2, help='Number of classes in the dataset')
+parser.add_argument('--pretrained_model', type=str, default='', help='Path to a pretrained model file to continue training')
+parser.add_argument('--save_path', type=str, default='', help='Path to save result')
 
 args = parser.parse_args()
-# Example running script
-# python train.py --model_name STGCN_1S --dataset_name Le2i_2classes_1
-# python train.py --model_name Lin_DenseSTGCN_1S --dataset_name Le2i_2classes_1 --num_layer 1
-# python train.py --model_name Lin_DenseSTGCN_1S --dataset_name Le2i_2classes_1 --num_layer 2
-# python train.py --model_name Lin_DenseSTGCN_1S --dataset_name Le2i_2classes_1 --num_layer 3
-# python train.py --model_name Lin_DenseSTGCN_1S --dataset_name Le2i_2classes_1 --num_layer 4
-# python train.py --model_name Lin_DenseSTGCN_1S --dataset_name Le2i_2classes_1 --num_layer 5
-# python train.py --model_name Lin_DenseSTGCN_1S --dataset_name Le2i_2classes_1 --num_layer 6
 
-# python train.py --model_name Exp_DenseSTGCN_1S --dataset_name Le2i_2classes_1 --num_layer 1
-# python train.py --model_name Exp_DenseSTGCN_1S --dataset_name Le2i_2classes_1 --num_layer 2
-# python train.py --model_name Exp_DenseSTGCN_1S --dataset_name Le2i_2classes_1 --num_layer 3
-# python train.py --model_name Exp_DenseSTGCN_1S --dataset_name Le2i_2classes_1 --num_layer 4
-
-# python train.py --model_name OneShot_STGCN_1S --dataset_name Le2i_2classes_1 --num_layer 1
-# python train.py --model_name OneShot_STGCN_1S --dataset_name Le2i_2classes_1 --num_layer 2
-# python train.py --model_name OneShot_STGCN_1S --dataset_name Le2i_2classes_1 --num_layer 3
-# python train.py --model_name OneShot_STGCN_1S --dataset_name Le2i_2classes_1 --num_layer 4
-# python train.py --model_name OneShot_STGCN_1S --dataset_name Le2i_2classes_1 --num_layer 5
-# python train.py --model_name OneShot_STGCN_1S --dataset_name Le2i_2classes_1 --num_layer 6
-
-
-# python train.py --model_name STGCN_2S --dataset_name Le2i_2classes_1
-# python train.py --model_name Lin_DenseSTGCN_2S --dataset_name Le2i_2classes_1 --num_layer 6
-# python train.py --model_name Exp_DenseSTGCN_2S --dataset_name Le2i_2classes_1 --num_layer 4
-# python train.py --model_name OneShot_STGCN_2S --dataset_name Le2i_2classes_1 --num_layer 6
-
-# Tommorow: lower layers of STGCN, more block of Dense and OneShot
 
 device = args.device
 epochs = args.epochs
@@ -90,16 +67,33 @@ batch_size = args.batch_size
 model_name = args.model_name
 dataset_name = args.dataset_name
 num_layer = args.num_layer
-save_folder = f'Result/{dataset_name}/{model_name}_{time.strftime("%Y%m%d%H%M%S")}'
+num_class = args.num_class
+
+if args.save_path:
+    save_folder = args.save_path
+else:
+    save_folder = f'Result/{dataset_name}/{model_name}_{time.strftime("%Y%m%d%H%M%S")}'
+
 train_data_file = f'DataFiles/{dataset_name}/train.pkl'
 val_data_file = f'DataFiles/{dataset_name}/val.pkl'
 test_data_file = f'DataFiles/{dataset_name}/test.pkl'
 eval_only = False
-# class_names = ['Not fall', 'Fall']
 
-class_names = ['Not fall', 'Falling', 'Fall']
+if num_class == 2:
+    class_names = ['Not fall', 'Fall']
+elif num_class == 3:
+    class_names = ['Not fall', 'Falling', 'Fall']
 
-num_class = len(class_names)
+def load_pretrained_model(model, pretrained_path):
+    checkpoint = torch.load(pretrained_path)
+    # Filter out the unnecessary keys
+    filtered_checkpoint = {k: v for k, v in checkpoint.items() if 'total_ops' not in k and 'total_params' not in k}
+    try:
+        model.load_state_dict(filtered_checkpoint)
+        print("Pretrained model loaded successfully.")
+    except RuntimeError as e:
+        print("Failed to load pretrained model due to architecture mismatch.")
+        print("Error: ", e)
 
 
 def load_dataset(data_files, batch_size, split_size=0):
@@ -114,7 +108,6 @@ def load_dataset(data_files, batch_size, split_size=0):
         del fts, lbs
     features = np.concatenate(features, axis=0)
     labels = np.concatenate(labels, axis=0)
-
     if split_size > 0:
         x_train, x_valid, y_train, y_valid = train_test_split(features, labels, test_size=split_size,
                                                               random_state=9)
@@ -170,26 +163,28 @@ if __name__ == '__main__':
 
     # MODEL.
     graph_args = {'strategy': 'spatial'}
-    if (model_name == "STGCN_1S"):
-        model = OneStream_STGCN(graph_args=graph_args, num_class=num_class).to(device)
-    elif (model_name == "STGCN_2S"):
-        model = TwoStream_STGCN(graph_args=graph_args, num_class=num_class).to(device)
-    elif (model_name == "Lin_DenseSTGCN_1S"):
-        model = Lin_DenseSTGCN_1S(graph_args=graph_args, num_class=num_class, n_layers=num_layer).to(device)
-    elif (model_name == "Lin_DenseSTGCN_2S"):
-        model = Lin_DenseSTGCN_2S(graph_args=graph_args, num_class=num_class, n_layers=num_layer).to(device)
-    elif (model_name == "Exp_DenseSTGCN_1S"):
-        model = Exp_DenseSTGCN_1S(graph_args=graph_args, num_class=num_class, n_layers=num_layer).to(device)
-    elif (model_name == "Exp_DenseSTGCN_2S"):
-        model = Exp_DenseSTGCN_2S(graph_args=graph_args, num_class=num_class, n_layers=num_layer).to(device)
-    elif (model_name == "OneShot_STGCN_1S"):
-        model = OneShot_STGCN_1S(num_class=num_class, graph_args=graph_args, n_layers=num_layer).to(device)
-    elif (model_name == "OneShot_STGCN_2S"):
-        model = OneShot_STGCN_2S(num_class=num_class, graph_args=graph_args, n_layers=num_layer).to(device)
-    else:
-        model = OneShot_STGCN_1S(graph_args=graph_args, num_class=num_class).to(device)
-        
+    model_classes = {
+        "STGCN_1S": OneStream_STGCN,
+        "STGCN_2S": TwoStream_STGCN,
+        "Lin_DenseSTGCN_1S": Lin_DenseSTGCN_1S,
+        "Lin_DenseSTGCN_2S": Lin_DenseSTGCN_2S,
+        "Exp_DenseSTGCN_1S": Exp_DenseSTGCN_1S,
+        "Exp_DenseSTGCN_2S": Exp_DenseSTGCN_2S,
+        "OSA_STGCN_nano_1S": OSA_STGCN_nano_1S,
+        "OSA_STGCN_small_1S": OSA_STGCN_small_1S,
+        "OSA_STGCN_medium_1S": OSA_STGCN_medium_1S,
+        "OSA_STGCN_large_1S": OSA_STGCN_large_1S
+    }
+    model = model_classes.get(model_name, OSA_STGCN_large_1S)(num_class=num_class, graph_args=graph_args).to(device)
 
+    if args.pretrained_model:
+        load_pretrained_model(model, args.pretrained_model)
+
+
+    # Training Setup
+    optimizer = Adadelta(model.parameters())  # Or any other optimizer and its parameters
+
+    
     # Use torchinfo to summarize the model
     input_shape = tuple(train_loader.dataset[0][0].shape)
         

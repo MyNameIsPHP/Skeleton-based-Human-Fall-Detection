@@ -154,7 +154,7 @@ class StreamSpatialTemporalGraph(nn.Module):
 
 
 class Exp_DenseSTGCN_1S(nn.Module):
-    def __init__(self, num_class, graph_args, n_layers=6, edge_importance_weighting=True, **kwargs):
+    def __init__(self, num_class, graph_args, n_layers=4, edge_importance_weighting=True, **kwargs):
         print("====== Exp_DenseSTGCN_1S ======")
 
         super().__init__()

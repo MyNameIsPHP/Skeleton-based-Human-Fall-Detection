@@ -2,7 +2,13 @@ import os
 import torch
 import numpy as np
 
-from Network.stgcn import TwoStream_STGCN
+from Network.stgcn import OneStream_STGCN
+
+from Network.oneshot_stgcn_nano import OSA_STGCN_nano_1S
+from Network.oneshot_stgcn_small import OSA_STGCN_small_1S
+from Network.oneshot_stgcn_medium import OSA_STGCN_medium_1S
+from Network.oneshot_stgcn_large import OSA_STGCN_large_1S
+from Network.exponential_dense_stgcn import Exp_DenseSTGCN_1S
 from pose_utils import normalize_points_with_size, scale_pose
 
 
@@ -13,17 +19,18 @@ class TSSTG(object):
         device: (str) Device to load the model on 'cpu' or 'cuda'.
     """
     def __init__(self,
-                 weight_file='Weights/TSSTG/tsstg-model.pth',
-                 device='cuda'):
+                weight_file = 'Result/URFD_3classes/Exp_DenseSTGCN_1S_20240511134826/Exp_DenseSTGCN_1S_best.pth',
+                device='cuda'):
         self.graph_args = {'strategy': 'spatial'}
-        self.class_names = ['Standing', 'Walking', 'Sitting', 'Lying Down',
-                            'Stand up', 'Sit down', 'Fall Down']
-        # self.class_names = ['Not Fall', 'Fall']
+        # self.class_names = ['Standing', 'Walking', 'Sitting', 'Lying Down',
+        #                     'Stand up', 'Sit down', 'Fall Down']
+        self.class_names = ['Not Fall', 'Falling', 'Fall Detected']
         self.num_class = len(self.class_names)
         self.device = device
-
-        self.model = TwoStream_STGCN(num_class = self.num_class, graph_args = self.graph_args).to(self.device)
-        self.model.load_state_dict(torch.load(weight_file))
+        
+        self.model = Exp_DenseSTGCN_1S(num_class = self.num_class, graph_args = self.graph_args).to(self.device)
+        # self.model = OSA_STGCN_small_1S(num_class = self.num_class, graph_args = self.graph_args).to(self.device)
+        self.model.load_state_dict(torch.load(weight_file),  strict=False)
         self.model.eval()
 
     def predict(self, pts, image_size):
