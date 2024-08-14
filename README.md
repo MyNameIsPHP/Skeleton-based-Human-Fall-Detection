@@ -4,13 +4,13 @@
 <table align="center">
   <tr>
     <td>
-      <img src="https://github.com/MyNameIsPHP/Skeleton-based-Human-Fall-Detection/blob/main/example_output_1.gif" width="80%" height="80%">
+      <img src="https://github.com/MyNameIsPHP/Skeleton-based-Human-Fall-Detection/blob/main/ExampleOutputs/example_output_1.gif" width="100%" height="100%">
     </td>
     <td>
-      <img src="https://github.com/MyNameIsPHP/Skeleton-based-Human-Fall-Detection/blob/main/example_output_2.gif" width="80%" height="80%">
+      <img src="https://github.com/MyNameIsPHP/Skeleton-based-Human-Fall-Detection/blob/main/ExampleOutputs/example_output_2.gif" width="100%" height="100%">
     </td>
     <td>
-      <img src="https://github.com/MyNameIsPHP/Skeleton-based-Human-Fall-Detection/blob/main/example_output_3.gif" width="80%" height="80%">
+      <img src="https://github.com/MyNameIsPHP/Skeleton-based-Human-Fall-Detection/blob/main/ExampleOutputs/example_output_3.gif" width="100%" height="100%">
     </td>
   </tr>
 </table>
